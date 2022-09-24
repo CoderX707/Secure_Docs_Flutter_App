@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:secure_docs/db/db.dart';
 import 'package:secure_docs/model/doc_model.dart';
@@ -20,19 +21,15 @@ class CustomForm extends StatefulWidget {
 
 class CustomFormState extends State<CustomForm> {
   final _formKey = GlobalKey<FormState>();
-  var _image;
-  var _title;
+  File? _image;
+  late String _title;
   var imagePicker;
-  var base64Image;
-late List<Doc> notes;
+  late dynamic base64Image;
+
   @override
-  void initState() async{
+  void initState() {
     super.initState();
     imagePicker = ImagePicker();
-    this.notes = await DocsDatabase.instance.readAllDocs();
-    print(this.notes[0].title);
-    print(this.notes[0].createdTime);
-    print(this.notes[0].filebase64);
   }
 
   @override
@@ -48,6 +45,7 @@ late List<Doc> notes;
                 return 'Please enter some text';
               }
               _title = value;
+              return null;
             },
           ),
           Center(
@@ -55,7 +53,7 @@ late List<Doc> notes;
               onTap: () async {
                 XFile image = await imagePicker.pickImage(
                     source: ImageSource.gallery,
-                    imageQuality: 50,
+                    imageQuality: 100,
                     preferredCameraDevice: CameraDevice.front);
                 setState(() {
                   _image = File(image.path);
@@ -67,7 +65,7 @@ late List<Doc> notes;
                 decoration: BoxDecoration(color: Colors.red[200]),
                 child: _image != null
                     ? Image.file(
-                        _image,
+                        _image!,
                         width: 200.0,
                         height: 200.0,
                         fit: BoxFit.fitHeight,
@@ -90,12 +88,12 @@ late List<Doc> notes;
               onPressed: () async {
                 if (_formKey.currentState!.validate() && _image != null) {
                   final bytes = File(_image!.path).readAsBytesSync();
-                  base64Image = "data:image/png;base64," + base64Encode(bytes);
+                  base64Image = base64Encode(bytes);
                   await addNote();
-                  // Navigator.of(context).pop();
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   const SnackBar(content: Text('Processing Data')),
-                  // );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Document added')),
+                  );
+                  Get.back();
                 }
               },
               child: const Text('Submit'),
@@ -106,29 +104,12 @@ late List<Doc> notes;
     );
   }
 
-  void addOrUpdateNote() async {
-    await addNote();
-    Navigator.of(context).pop();
-  }
-
-  // Future updateNote() async {
-  //   final note = widget.note!.copy(
-  //     isImportant: isImportant,
-  //     number: number,
-  //     title: title,
-  //     description: description,
-  //   );
-
-  //   await NotesDatabase.instance.update(note);
-  // }
-
   Future addNote() async {
     final note = Doc(
       title: _title,
       filebase64: base64Image,
       createdTime: DateTime.now(),
     );
-
     await DocsDatabase.instance.create(note);
   }
 }

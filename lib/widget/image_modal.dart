@@ -1,22 +1,27 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'package:secure_docs/model/doc_model.dart';
 
 class ImageModal extends StatelessWidget {
-  const ImageModal({super.key, required this.url});
-  final String url;
+  ImageModal({super.key, required this.document});
+  Doc document;
   @override
   Widget build(BuildContext context) {
+    Uint8List imageString = const Base64Decoder().convert(document.filebase64);
     return ClipRRect(
       child: Wrap(
         children: [
-          Text('Document Title'),
-          Image.network(
-            url,
+          Text(document.title),
+          Image.memory(
+            imageString,
             fit: BoxFit.fitWidth,
+            gaplessPlayback: true,
           ),
-          Text('Document Title'),
+          Text("${document.createdTime}"),
         ],
       ),
     );
-    ;
   }
 }
