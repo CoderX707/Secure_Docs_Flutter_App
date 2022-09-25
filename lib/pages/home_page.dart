@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:get/get.dart';
 
 import 'package:secure_docs/db/db.dart';
 import 'package:secure_docs/helper/menu_helper.dart';
 import 'package:secure_docs/model/doc_model.dart';
+import 'package:secure_docs/pages/view_doc_page.dart';
 import 'package:secure_docs/widget/image_modal.dart';
 
 class HomePage extends StatefulWidget {
@@ -20,6 +22,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late bool longPressPreview = false;
   late List<Doc> docs;
   late bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -68,15 +71,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         child: StaggeredGridView.countBuilder(
                           crossAxisCount: 2,
                           itemCount: docs.length,
-                          mainAxisSpacing: 4.0,
-                          crossAxisSpacing: 4.0,
+                          mainAxisSpacing: 5.0,
+                          crossAxisSpacing: 5.0,
                           itemBuilder: (context, index) {
                             Uint8List imageString = const Base64Decoder()
                                 .convert(docs[index].filebase64);
                             return GestureDetector(
                               onTap: () {
-                                // print('called');
-                                /* single view */
+                                Get.to(ViewDocument(doc: docs[index]));
                               },
                               onLongPress: () async {
                                 setState(() {
@@ -91,7 +93,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 setState(() {
                                   longPressPreview = false;
                                 });
-
                                 _popupDialog.remove();
                               },
                               child: Card(

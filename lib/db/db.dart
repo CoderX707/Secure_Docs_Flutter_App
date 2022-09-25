@@ -61,19 +61,13 @@ CREATE TABLE $tableDocs (
 
   Future<List<Doc>> readAllDocs() async {
     final db = await instance.database;
-
     const orderBy = '${DocFields.time} ASC';
-    // final result =
-    //     await db.rawQuery('SELECT * FROM $tableDocs ORDER BY $orderBy');
-
     final result = await db.query(tableDocs, orderBy: orderBy);
-
     return result.map((json) => Doc.fromJson(json)).toList();
   }
 
   Future<int> update(Doc note) async {
     final db = await instance.database;
-
     return db.update(
       tableDocs,
       note.toJson(),
@@ -84,7 +78,6 @@ CREATE TABLE $tableDocs (
 
   Future<int> delete(int id) async {
     final db = await instance.database;
-
     return await db.delete(
       tableDocs,
       where: '${DocFields.id} = ?',
