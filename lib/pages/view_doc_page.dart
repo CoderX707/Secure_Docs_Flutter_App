@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:secure_docs/controller/doc_controller.dart';
 import 'package:secure_docs/db/db.dart';
 
 import 'package:secure_docs/model/doc_model.dart';
@@ -9,6 +10,7 @@ import 'package:secure_docs/pages/create_page.dart';
 
 class ViewDocument extends StatelessWidget {
   ViewDocument({super.key, required this.doc});
+  final DocController _docsController = Get.find();
   Doc doc;
   @override
   Widget build(BuildContext context) {
@@ -45,8 +47,8 @@ class ViewDocument extends StatelessWidget {
                     backgroundColor:
                         MaterialStatePropertyAll<Color>(Colors.red),
                   ),
-                  onPressed: () async {
-                    await DocsDatabase.instance.delete(doc.id!);
+                  onPressed: () {
+                    _docsController.deleteDoc(doc.id!);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Document Deleted')),
                     );

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:get/get.dart';
 
-import 'package:secure_docs/db/db.dart';
+import 'package:secure_docs/controller/doc_controller.dart';
 import 'package:secure_docs/helper/menu_helper.dart';
 import 'package:secure_docs/model/doc_model.dart';
 import 'package:secure_docs/pages/view_doc_page.dart';
@@ -20,8 +20,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late OverlayEntry _popupDialog;
   late AnimationController _animationController;
   late bool longPressPreview = false;
-  late List<Doc> docs;
   late bool isLoading = true;
+  final DocController _docsController = Get.put(DocController());
 
   @override
   void initState() {
@@ -30,15 +30,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-    getDocumentsFromDB();
+    // getDocumentsFromDB();
   }
 
-  void getDocumentsFromDB() async {
-    docs = await DocsDatabase.instance.readAllDocs();
-    setState(() {
-      isLoading = false;
-    });
-  }
+  // void getDocumentsFromDB() async {
+  //   await _docsController.getAllDocs();
+  //   print(_docsController.documentsList.length);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -56,64 +54,62 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            isLoading
-                ? const Expanded(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : docs.isEmpty
-                    ? const Expanded(
-                        child: Center(child: Text("No document found")))
-                    : Expanded(
-                        child: StaggeredGridView.countBuilder(
-                          crossAxisCount: 2,
-                          itemCount: docs.length,
-                          mainAxisSpacing: 5.0,
-                          crossAxisSpacing: 5.0,
-                          itemBuilder: (context, index) {
-                            Uint8List imageString = const Base64Decoder()
-                                .convert(docs[index].filebase64);
-                            return GestureDetector(
-                              onTap: () {
-                                Get.to(ViewDocument(doc: docs[index]));
-                              },
-                              onLongPress: () async {
-                                setState(() {
-                                  longPressPreview = true;
-                                });
-                                _animationController.forward();
-                                _popupDialog = _createPopupDialog(docs[index]);
-                                Overlay.of(context)!.insert(_popupDialog);
-                              },
-                              onLongPressEnd: (details) {
-                                _animationController.reverse();
-                                setState(() {
-                                  longPressPreview = false;
-                                });
-                                _popupDialog.remove();
-                              },
-                              child: Card(
-                                child: Column(
-                                  children: [
-                                    Image.memory(
-                                      imageString,
-                                      gaplessPlayback: true,
-                                    ),
-                                    Text(docs[index].title),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                          staggeredTileBuilder: (index) =>
-                              const StaggeredTile.fit(1),
+        body: Obx(() {
+          if (_docsController.documentsList.isEmpty) {
+            return const Center(
+              child: Text("No Documents Found"),
+            );
+          } else if (_docsController.documentsList.isNotEmpty) {
+            return StaggeredGridView.countBuilder(
+              crossAxisCount: 2,
+              itemCount: _docsController.documentsList.length,
+              mainAxisSpacing: 5.0,
+              crossAxisSpacing: 5.0,
+              itemBuilder: (context, index) {
+                Uint8List imageString = const Base64Decoder()
+                    .convert(_docsController.documentsList[index].filebase64);
+                return GestureDetector(
+                  onTap: () {
+                    Get.to(ViewDocument(
+                        doc: _docsController.documentsList[index]));
+                  },
+                  onLongPress: () async {
+                    setState(() {
+                      longPressPreview = true;
+                    });
+                    _animationController.forward();
+                    _popupDialog = _createPopupDialog(
+                        _docsController.documentsList[index]);
+                    Overlay.of(context)!.insert(_popupDialog);
+                  },
+                  onLongPressEnd: (details) {
+                    _animationController.reverse();
+                    setState(() {
+                      longPressPreview = false;
+                    });
+                    _popupDialog.remove();
+                  },
+                  child: Card(
+                    child: Column(
+                      children: [
+                        Image.memory(
+                          imageString,
+                          gaplessPlayback: true,
                         ),
-                      ),
-          ],
-        ),
+                        Text(_docsController.documentsList[index].title),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              staggeredTileBuilder: (index) => const StaggeredTile.fit(1),
+            );
+          } else {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        }),
       ),
     );
   }

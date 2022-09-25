@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:secure_docs/db/db.dart';
+import 'package:secure_docs/controller/doc_controller.dart';
 import 'package:secure_docs/model/doc_model.dart';
 
 enum ImageSourceType { gallery, camera }
@@ -22,6 +22,8 @@ class CustomForm extends StatefulWidget {
 
 class CustomFormState extends State<CustomForm> {
   final _formKey = GlobalKey<FormState>();
+  final DocController _docsController = Get.find();
+
   File? _image;
   var imagePicker;
   dynamic base64Image;
@@ -87,14 +89,19 @@ class CustomFormState extends State<CustomForm> {
               child: ElevatedButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    if(_image!=null){
-                    final bytes = File(_image!.path).readAsBytesSync();
-                    base64Image = base64Encode(bytes);
-                    }else{
+                    if (_image != null) {
+                      final bytes = File(_image!.path).readAsBytesSync();
+                      base64Image = base64Encode(bytes);
+                    } else {
                       base64Image = widget.doc!.filebase64;
                     }
-                    print(base64Image);
-                    await updateDoc();
+                    final document = Doc(
+                      id: widget.doc!.id,
+                      title: title,
+                      filebase64: base64Image,
+                      createdTime: DateTime.now(),
+                    );
+                    _docsController.updateDoc(document);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Document Updated')),
                     );
@@ -163,7 +170,12 @@ class CustomFormState extends State<CustomForm> {
                   if (_formKey.currentState!.validate() && _image != null) {
                     final bytes = File(_image!.path).readAsBytesSync();
                     base64Image = base64Encode(bytes);
-                    await addDoc();
+                    final document = Doc(
+                      title: title,
+                      filebase64: base64Image,
+                      createdTime: DateTime.now(),
+                    );
+                    _docsController.insertDoc(document);
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Document Saved')),
                     );
@@ -177,24 +189,5 @@ class CustomFormState extends State<CustomForm> {
         ),
       );
     }
-  }
-
-  Future addDoc() async {
-    final document = Doc(
-      title: title,
-      filebase64: base64Image,
-      createdTime: DateTime.now(),
-    );
-    await DocsDatabase.instance.create(document);
-  }
-
-  Future updateDoc() async {
-    final document = Doc(
-      id: widget.doc!.id,
-      title: title,
-      filebase64: base64Image,
-      createdTime: DateTime.now(),
-    );
-    await DocsDatabase.instance.update(document);
   }
 }
